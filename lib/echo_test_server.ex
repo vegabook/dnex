@@ -8,40 +8,58 @@ defmodule EchoTestServer do
   @behaviour WebSock
 
   @impl true
-  def init(opts) do
-    IO.puts("INIT")
+  def init(socket) do
     # When each new request comes in to app, new PID is started for that connection
     # We need to somehow store those PIDS (which should be connected clients) and push to them, when
     # each event comes in
-    pid = self()
-    IO.inspect(pid: pid)
-    send(pid, {:message, "to handle_info"})
-    IO.inspect(opts: opts)
-    {:ok, opts}
+
+
+    # We can do more transformations of socket here!
+    {:ok, socket}
   end
 
   @impl true
-  def handle_in({event_or_string_message, _opts} = _message, websock_state) do
-    {:push, {:text, String.upcase(event_or_string_message)}, websock_state}
+  def handle_in({message, _opts} = _message, websock_state) do
+    message = MessageHandler.decode_message(message)
+    send(websock_state.pid, {:message, message})
+    {:ok, websock_state}
   end
-
-  # @impl true
-  # def handle_control() do
-  # end
 
   @doc """
-  Handle info for handling internal elixir process messages
-  usually emitted by GenServer, or basically any other elixir process
-  """
+  Handle incoming events from websocket connection.
+    """
   @impl true
-  def handle_info({:message, msg}, state) do
-    IO.puts("Handle info callback")
-    IO.inspect(msg)
+  def handle_info({:message, {:event, event}}, socket) do
+    event = Event.parse(event)
+    send(socket.pid, {:success_event, event})
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_info({:message, {:req, _sub_id, _filters}}, state) do
+    Phoenix.PubSub.subscribe(:dnex_pubsub, "events")
+    IO.puts("Subscribed to events")
     {:ok, state}
   end
+
+
+  @impl true
+  def handle_info({:success_event, event}, socket) do
+    event_response = MessageHandler.encode_message({:success_event, event})
+    broadcast_event(event)
+    {:push, {:text, event_response}, socket}
+  end
+
+
+  defp broadcast_event(event) do
+    #event = MessageHandler.encode_message({:broadcast_event, event})
+    Phoenix.PubSub.broadcast(:dnex_pubsub, "events", "hello to all req subs")
+  end
+
 
   @impl true
   def terminate(reason, state) do
     {:stop, reason, state}
   end
+
 end

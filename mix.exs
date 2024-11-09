@@ -24,7 +24,8 @@ defmodule Dnex.MixProject do
     [
       {:bandit, "~> 1.5"},
       {:websock_adapter, "~> 0.5.7"},
-      {:phoenix_pubsub, "~> 2.1"}
+      {:phoenix_pubsub, "~> 2.1"},
+      {:jason, "~> 1.4"}
     ]
   end
 end
