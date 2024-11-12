@@ -3,15 +3,18 @@ defmodule StateServer do
 
   # Client
 
-  # def start_link(opts) do
-  #   GenServer.start_link(__MODULE__, opts, name: __MODULE__)
-  # end
+  def start_link(opts \\ %{}) do
+    GenServer.start_link(__MODULE__, %{pids: []}, name: __MODULE__)
+  end
 
   # Server
 
   @impl true
   def init(state) do
-    init_state = %{msg: "Hello World"}
-    {:ok, init_state}
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_cast({:hello, msg}, from, state) do
   end
 end

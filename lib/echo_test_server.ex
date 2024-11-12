@@ -13,13 +13,13 @@ defmodule EchoTestServer do
     # We need to somehow store those PIDS (which should be connected clients) and push to them, when
     # each event comes in
 
-
     # We can do more transformations of socket here!
     {:ok, socket}
   end
 
   @impl true
   def handle_in({message, _opts} = _message, websock_state) do
+    Phoenix.PubSub.broadcast(:dnex_pubsub, "events", {:request, "hello from event server"})
     message = MessageHandler.decode_message(message)
     send(websock_state.pid, {:message, message})
     {:ok, websock_state}
@@ -27,9 +27,10 @@ defmodule EchoTestServer do
 
   @doc """
   Handle incoming events from websocket connection.
-    """
+  """
   @impl true
   def handle_info({:message, {:event, event}}, socket) do
+    IO.puts("Event received")
     event = Event.parse(event)
     send(socket.pid, {:success_event, event})
     {:ok, socket}
@@ -37,11 +38,9 @@ defmodule EchoTestServer do
 
   @impl true
   def handle_info({:message, {:req, _sub_id, _filters}}, state) do
-    Phoenix.PubSub.subscribe(:dnex_pubsub, "events")
     IO.puts("Subscribed to events")
     {:ok, state}
   end
-
 
   @impl true
   def handle_info({:success_event, event}, socket) do
@@ -50,16 +49,23 @@ defmodule EchoTestServer do
     {:push, {:text, event_response}, socket}
   end
 
-
-  defp broadcast_event(event) do
-    #event = MessageHandler.encode_message({:broadcast_event, event})
-    Phoenix.PubSub.broadcast(:dnex_pubsub, "events", "hello to all req subs")
+  @impl true
+  def handle_info({:broadcast_to_clients, msg}, state) do
+    IO.puts("Broadcasting to all clients")
+    {:push, {:text, msg}, state}
   end
 
+  defp broadcast_event(event) do
+    # event = MessageHandler.encode_message({:broadcast_event, event})
+    Phoenix.PubSub.broadcast(
+      :dnex_pubsub,
+      "events",
+      {:broadcast_to_clients, "hello to all req subs"}
+    )
+  end
 
   @impl true
   def terminate(reason, state) do
     {:stop, reason, state}
   end
-
 end
