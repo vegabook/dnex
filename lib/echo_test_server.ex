@@ -56,6 +56,7 @@ defmodule EchoTestServer do
   def handle_info({:error_req, sub_id}, socket) do
     error_request = MessageHandler.encode_message({:error_request, sub_id, "invalid"})
     IO.inspect(error_request: error_request)
+    send(socket.pid, {:close_connection})
     {:push, {:text, error_request}, socket}
   end
 
@@ -77,8 +78,16 @@ defmodule EchoTestServer do
     {:push, {:text, event}, socket}
   end
 
+  # Closing connection
   @impl true
-  def terminate(reason, socket) do
-    {:stop, reason, socket}
+  def handle_info({:close_connection}, socket) do
+    {:stop, :normal, socket}
+  end
+
+  @impl true
+  def terminate(reason, _socket) do
+    IO.inspect(reason)
+    IO.puts("Closing connection")
+    :ok
   end
 end
