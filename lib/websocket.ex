@@ -1,9 +1,8 @@
-defmodule StateStruct do
+defmodule Websocket do
   @moduledoc """
   WebSocket Struct for tracking the websocket state.
   """
-  defstruct [:connection_id, :user_agent, :remote_ip, :pid]
-
+  defstruct [:connection_id, :user_agent, :remote_ip, :pid, :subscription_id]
 
   def init_state(conn, pid) do
     %__MODULE__{
@@ -14,24 +13,23 @@ defmodule StateStruct do
     }
   end
 
-
   defp get_connection_id(conn) do
-    [v] = Plug.Conn.get_req_header(conn, "sec-websocket-key")
-    v
+    [id] = Plug.Conn.get_req_header(conn, "sec-websocket-key")
+
+    id
     |> Base.decode64!()
     |> Base.encode16(case: :lower)
   end
-
 
   defp get_client_ip(conn) do
     conn.remote_ip
   end
 
-
   defp get_user_agent(conn) do
-    user_agent = Plug.Conn.get_req_header(conn, "user-agent")
-    user_agent || nil
+    Plug.Conn.get_req_header(conn, "user-agent")
   end
 
-
+  def add_subscription_id(socket, subscription_id) do
+    %{socket | subscription_id: subscription_id}
+  end
 end

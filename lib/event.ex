@@ -1,18 +1,16 @@
 defmodule Event do
+  @derive Jason.Encoder
   @moduledoc """
-    Module to parse events from a client and validate the values
-    such as signature and pubkey.
-    """
-##TODO: DERIVE JASON SO ENCODING FROM ALREADY PARSED EVENTS CAN BE BROADCASTED
-
-
- ### Questions:
-# Make use of embed schema to validate the values of the event ?
-# With embed schema we can leverage the ecto changeset functions and
-# avoid parsing manually which can cause errors.
+  Module to parse events from a client and validate the values
+  such as signature and pubkey.
+  """
 
   defstruct [:kind, :created_at, :content, :id, :pubkey, :sig, :tags]
 
+  ### Questions:
+  # Make use of embed schema to validate the values of the event ?
+  # With embed schema we can leverage the ecto changeset functions and
+  # avoid parsing manually which can cause errors.
 
   def parse(event) do
     %__MODULE__{
@@ -25,5 +23,4 @@ defmodule Event do
       tags: event["tags"]
     }
   end
-
 end

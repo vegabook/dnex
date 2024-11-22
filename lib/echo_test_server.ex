@@ -1,4 +1,5 @@
 defmodule EchoTestServer do
+  alias Phoenix.PubSub
   # Will use module docs to document how things work
   @moduledoc """
     When connection is upgraded to websocket, it does not have any state, so it is basically on us to determine how
@@ -18,11 +19,10 @@ defmodule EchoTestServer do
   end
 
   @impl true
-  def handle_in({message, _opts} = _message, websock_state) do
-    Phoenix.PubSub.broadcast(:dnex_pubsub, "events", {:request, "hello from event server"})
+  def handle_in({message, _opts} = _message, socket) do
     message = MessageHandler.decode_message(message)
-    send(websock_state.pid, {:message, message})
-    {:ok, websock_state}
+    send(socket.pid, {:message, message})
+    {:ok, socket}
   end
 
   @doc """
@@ -30,42 +30,55 @@ defmodule EchoTestServer do
   """
   @impl true
   def handle_info({:message, {:event, event}}, socket) do
-    IO.puts("Event received")
     event = Event.parse(event)
     send(socket.pid, {:success_event, event})
     {:ok, socket}
   end
 
   @impl true
-  def handle_info({:message, {:req, _sub_id, _filters}}, state) do
-    IO.puts("Subscribed to events")
-    {:ok, state}
+  def handle_info({:message, {:req, sub_id, filters}}, socket) do
+    if Request.valid?({sub_id, filters}) do
+      send(socket.pid, {:success_req, sub_id, filters})
+    else
+      send(socket.pid, {:error_req, sub_id})
+    end
+
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_info({:success_req, sub_id, filters}, socket) do
+    PubSub.subscribe(:dnex_pubsub, "events")
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_info({:error_req, sub_id}, socket) do
+    error_request = MessageHandler.encode_message({:error_request, sub_id, "invalid"})
+    IO.inspect(error_request: error_request)
+    {:push, {:text, error_request}, socket}
   end
 
   @impl true
   def handle_info({:success_event, event}, socket) do
+    IO.puts("Success event")
     event_response = MessageHandler.encode_message({:success_event, event})
-    broadcast_event(event)
+    PubSub.broadcast(:dnex_pubsub, "events", {:broadcast_event, event})
     {:push, {:text, event_response}, socket}
   end
 
+  ### Handler for pubsub broadcasting event
   @impl true
-  def handle_info({:broadcast_to_clients, msg}, state) do
-    IO.puts("Broadcasting to all clients")
-    {:push, {:text, msg}, state}
-  end
+  def handle_info({:broadcast_event, event}, socket) do
+    IO.puts("Broadcast event")
+    sub_id = ":1"
+    event = MessageHandler.encode_message({:event, event}, sub_id)
 
-  defp broadcast_event(event) do
-    # event = MessageHandler.encode_message({:broadcast_event, event})
-    Phoenix.PubSub.broadcast(
-      :dnex_pubsub,
-      "events",
-      {:broadcast_to_clients, "hello to all req subs"}
-    )
+    {:push, {:text, event}, socket}
   end
 
   @impl true
-  def terminate(reason, state) do
-    {:stop, reason, state}
+  def terminate(reason, socket) do
+    {:stop, reason, socket}
   end
 end
