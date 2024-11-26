@@ -10,11 +10,6 @@ defmodule EchoTestServer do
 
   @impl true
   def init(socket) do
-    # When each new request comes in to app, new PID is started for that connection
-    # We need to somehow store those PIDS (which should be connected clients) and push to them, when
-    # each event comes in
-
-    # We can do more transformations of socket here!
     {:ok, socket}
   end
 
@@ -31,6 +26,7 @@ defmodule EchoTestServer do
   @impl true
   def handle_info({:message, {:event, event}}, socket) do
     event = Event.parse(event)
+    IO.inspect(event)
     send(socket.pid, {:success_event, event})
     {:ok, socket}
   end
@@ -47,7 +43,7 @@ defmodule EchoTestServer do
   end
 
   @impl true
-  def handle_info({:success_req, sub_id, filters}, socket) do
+  def handle_info({:success_req, _sub_id, _filters}, socket) do
     PubSub.subscribe(:dnex_pubsub, "events")
     {:ok, socket}
   end
@@ -55,14 +51,12 @@ defmodule EchoTestServer do
   @impl true
   def handle_info({:error_req, sub_id}, socket) do
     error_request = MessageHandler.encode_message({:error_request, sub_id, "invalid"})
-    IO.inspect(error_request: error_request)
     send(socket.pid, {:close_connection})
     {:push, {:text, error_request}, socket}
   end
 
   @impl true
   def handle_info({:success_event, event}, socket) do
-    IO.puts("Success event")
     event_response = MessageHandler.encode_message({:success_event, event})
     PubSub.broadcast(:dnex_pubsub, "events", {:broadcast_event, event})
     {:push, {:text, event_response}, socket}
@@ -86,8 +80,6 @@ defmodule EchoTestServer do
 
   @impl true
   def terminate(reason, _socket) do
-    IO.inspect(reason)
-    IO.puts("Closing connection")
     :ok
   end
 end

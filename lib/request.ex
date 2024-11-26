@@ -2,7 +2,7 @@ defmodule Request do
   @subscription_id_length 64
 
   def valid?({sub_id, filters}) do
-    is_list(filters) and subscription_id_valid?(sub_id)
+    is_map(filters) and subscription_id_valid?(sub_id)
   end
 
   defp subscription_id_valid?(subscription_id)
