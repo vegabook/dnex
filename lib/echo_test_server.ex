@@ -15,6 +15,7 @@ defmodule EchoTestServer do
 
   @impl true
   def handle_in({message, _opts} = _message, socket) do
+    IO.puts(message)
     message = MessageHandler.decode_message(message)
     send(socket.pid, {:message, message})
     {:ok, socket}
@@ -26,7 +27,7 @@ defmodule EchoTestServer do
   @impl true
   def handle_info({:message, {:event, event}}, socket) do
     event = Event.parse(event)
-    IO.inspect(event)
+    IO.inspect(event: event)
     send(socket.pid, {:success_event, event})
     {:ok, socket}
   end
@@ -76,10 +77,5 @@ defmodule EchoTestServer do
   @impl true
   def handle_info({:close_connection}, socket) do
     {:stop, :normal, socket}
-  end
-
-  @impl true
-  def terminate(reason, _socket) do
-    :ok
   end
 end

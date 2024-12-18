@@ -26,7 +26,7 @@ defmodule Dnex.MixProject do
       {:websock_adapter, "~> 0.5.7"},
       {:phoenix_pubsub, "~> 2.1"},
       {:jason, "~> 1.4"},
-      {:bitcoinex, "~> 0.1.8"}
+      {:k256, "~> 0.0.8"}
     ]
   end
 end
