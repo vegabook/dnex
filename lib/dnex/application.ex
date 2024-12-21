@@ -7,7 +7,7 @@ defmodule Dnex.Application do
 
   @impl true
   def start(_type, _args) do
-    webserver = {Bandit, scheme: :http, plug: TestEndpoint, port: 4000}
+    webserver = {Bandit, scheme: :http, plug: TestEndpoint, port: 4200}
     pubsub_server = {Phoenix.PubSub, name: :dnex_pubsub}
 
     children = [

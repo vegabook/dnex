@@ -15,7 +15,6 @@ defmodule EchoTestServer do
 
   @impl true
   def handle_in({message, _opts} = _message, socket) do
-    IO.puts(message)
     message = MessageHandler.decode_message(message)
     send(socket.pid, {:message, message})
     {:ok, socket}
@@ -26,9 +25,8 @@ defmodule EchoTestServer do
   """
   @impl true
   def handle_info({:message, {:event, event}}, socket) do
-    event = Event.parse(event)
-    IO.inspect(event: event)
-    send(socket.pid, {:success_event, event})
+    {response, event} = Event.validate(event)
+    send(socket.pid, {response, event})
     {:ok, socket}
   end
 
@@ -51,22 +49,27 @@ defmodule EchoTestServer do
 
   @impl true
   def handle_info({:error_req, sub_id}, socket) do
-    error_request = MessageHandler.encode_message({:error_request, sub_id, "invalid"})
+    error_request = MessageHandler.encode_message({:error_request, sub_id})
     send(socket.pid, {:close_connection})
     {:push, {:text, error_request}, socket}
   end
 
   @impl true
-  def handle_info({:success_event, event}, socket) do
+  def handle_info({:valid, event}, socket) do
     event_response = MessageHandler.encode_message({:success_event, event})
     PubSub.broadcast(:dnex_pubsub, "events", {:broadcast_event, event})
+    {:push, {:text, event_response}, socket}
+  end
+
+  @impl true
+  def handle_info({:invalid, event}, socket) do
+    event_response = MessageHandler.encode_message({:bad_event, event})
     {:push, {:text, event_response}, socket}
   end
 
   ### Handler for pubsub broadcasting event
   @impl true
   def handle_info({:broadcast_event, event}, socket) do
-    IO.puts("Broadcast event")
     sub_id = ":1"
     event = MessageHandler.encode_message({:event, event}, sub_id)
 
