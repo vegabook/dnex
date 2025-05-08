@@ -12,7 +12,7 @@ defmodule Dnex.Application do
 
     children = [
       webserver,
-      pubsub_server
+      pubsub_server,
       # Starts a worker by calling: Dnex.Worker.start_link(arg)
       # {Dnex.Worker, arg}
     ]

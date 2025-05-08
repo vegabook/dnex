@@ -16,8 +16,8 @@ defmodule Event do
     event = parse(raw_event)
 
     case validate_signature(event) do
-      {:ok, :valid_event} -> {:valid, event}
-      {:error, :invalid_event} -> {:invalid, event}
+      {:ok, :valid_event} -> {:event_valid, event}
+      {:error, :invalid_event} -> {:event_invalid, event}
     end
   end
 

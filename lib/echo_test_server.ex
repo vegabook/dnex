@@ -1,4 +1,4 @@
-defmodule EchoTestServer do
+defmodule TestServer do
   alias Phoenix.PubSub
   # Will use module docs to document how things work
   @moduledoc """
@@ -14,10 +14,25 @@ defmodule EchoTestServer do
   end
 
   @impl true
-  def handle_in({message, _opts} = _message, socket) do
-    message = MessageHandler.decode_message(message)
-    send(socket.pid, {:message, message})
+  def handle_in({message, _opts}, socket) do
+    {:ok, pid} = RequestHandlerServer.start_link(socket)
+    socket = %{socket | request_handler_pid: pid}
+    RequestHandlerServer.process_message(message)
     {:ok, socket}
+  end
+
+
+  @impl true
+  def handle_info({:event_valid, response}, socket) do
+    IO.puts("xxxxxxxxxxxx")
+    # BROADCAST EVENTS
+    {:push, {:text, response}, socket}
+  end
+
+  @impl true
+  def handle_info({:event_invalid, response}, socket) do
+    IO.puts("yyyyyyyyyyyyyyyy")
+    {:push, {:text, response}, socket}
   end
 
   @doc """

@@ -16,11 +16,11 @@ defmodule MessageHandler do
 
   def encode_message(message)
 
-  def encode_message({:success_event, event}) do
+  def encode_message({:event_valid, event}) do
     ["OK", event.id, true, ""] |> Jason.encode!()
   end
 
-  def encode_message({:bad_event, event}) do
+  def encode_message({:event_invalid, event}) do
     ["OK", event.id, false, "invalid: event crypto is not valid!"]
     |> Jason.encode!()
   end
