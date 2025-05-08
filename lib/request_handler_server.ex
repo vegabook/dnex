@@ -15,10 +15,12 @@ defmodule RequestHandlerServer do
   @impl true
   def handle_cast({:raw_message, message}, socket) do
     message = MessageHandler.decode_message(message)
-    socket = %{socket | message: message}
     send(self(), message)
     {:noreply, socket}
   end
+
+
+  ## Processing messages code
 
   @impl true
   def handle_info({:event, event}, socket) do
@@ -29,6 +31,23 @@ defmodule RequestHandlerServer do
     send(socket.pid, {response_code, response_event})
     {:noreply, socket}
   end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   ### Client side code

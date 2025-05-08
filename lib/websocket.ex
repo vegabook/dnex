@@ -2,7 +2,7 @@ defmodule Websocket do
   @moduledoc """
   WebSocket Struct for tracking the websocket state.
   """
-  defstruct [:connection_id, :user_agent, :remote_ip, :pid, :subscription_id, :request_handler_pid, message: nil]
+  defstruct [:connection_id, :user_agent, :remote_ip, :pid, :subscription_id, :request_handler_pid]
 
   def init_state(conn, pid) do
     %__MODULE__{
